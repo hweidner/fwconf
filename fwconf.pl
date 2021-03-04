@@ -25,7 +25,7 @@
 #
 
 
-$IPT = "/sbin/iptables";
+$IPT = "/usr/sbin/iptables-legacy";
 $log_spec = "--log-level info -m limit --limit 10/minute";
 
 %proto_serv = ();
@@ -284,30 +284,30 @@ for $file (@ARGV) {
 		    }
 		}
 	    }
-	    if(!defined(@spec)) {
+	    if(!@spec) {
 		@spec = ("");
 	    }
 
-	    if($src eq "ALL" or !defined(@{$group_if{$src}})) {
+	    if($src eq "ALL" or !@{$group_if{$src}}) {
 		@source_if = ("");
 	    } elsif($chain =~ /(POSTROUTING|OUTPUT)/) {
 		@source_if = ("");
 	    } else {
 		@source_if = @{$group_if{$src}};
 	    }
-	    if($src eq "ALL" or !defined(@{$group_ip{$src}})) {
+	    if($src eq "ALL" or !@{$group_ip{$src}}) {
 		@source_ip = ("");
 	    } else {
 		@source_ip = @{$group_ip{$src}};
 	    }
-	    if($dst eq "ALL" or !defined(@{$group_if{$dst}})) {
+	    if($dst eq "ALL" or !@{$group_if{$dst}}) {
 		@dest_if = ("");
             } elsif($chain =~ /PREROUTING/) {
                 @dest_if = ("");
 	    } else {
 		@dest_if = @{$group_if{$dst}};
 	    }
-	    if($dst eq "ALL" or !defined(@{$group_ip{$dst}})) {
+	    if($dst eq "ALL" or !@{$group_ip{$dst}}) {
 		@dest_ip = ("");
 	    } else {
 		@dest_ip = @{$group_ip{$dst}};
@@ -320,13 +320,15 @@ for $file (@ARGV) {
 		if($sif ne "") { $sif = "-i $sif"; }
 		for $i_sip (@source_ip) {
 		    $sip = $i_sip;
-		    if($sip ne "") { $sip = "-s $sip"; }
+		    if(substr($sip, 0, 1) eq "!") { $sip = "! -s " . substr($sip, 1); }
+		    elsif($sip ne "") { $sip = "-s $sip"; }
 		    for $i_dif (@dest_if) {
 			$dif = $i_dif;
 			if($dif ne "") { $dif = "-o $dif"; }
 			for $i_dip (@dest_ip) {
 			    $dip = $i_dip;
-			    if($dip ne "") { $dip = "-d $dip"; }
+			    if(substr($dip, 0, 1) eq "!") { $dip = "! -d " . substr($dip, 1); }
+			    elsif($dip ne "") { $dip = "! -d $dip"; }
 
 			    for $sp (@spec) {
 				$cstate = ($sp =~ /icmp/ and $sp !~ /echo-request/) ? "" : $state;
