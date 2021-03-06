@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 
 #
-# FWconf  version 1.02
+# FWconf  version 1.0.3
 #
 # a firewall configuration language for Netfilter/Iptables
 #
@@ -328,7 +328,7 @@ for $file (@ARGV) {
 			for $i_dip (@dest_ip) {
 			    $dip = $i_dip;
 			    if(substr($dip, 0, 1) eq "!") { $dip = "! -d " . substr($dip, 1); }
-			    elsif($dip ne "") { $dip = "! -d $dip"; }
+			    elsif($dip ne "") { $dip = "-d $dip"; }
 
 			    for $sp (@spec) {
 				$cstate = ($sp =~ /icmp/ and $sp !~ /echo-request/) ? "" : $state;
