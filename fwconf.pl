@@ -1,13 +1,13 @@
 #!/usr/bin/perl
 
 #
-# FWconf  version 1.0.3
+# FWconf  version 1.0.4
 #
 # a firewall configuration language for Netfilter/Iptables
 #
 # See http://www.weidner.ch/fwconf.html for a documentation.
 #
-# (c) 2001-2018 by Harald Weidner <hweidner@gmx.net>
+# (c) 2001-2022 by Harald Weidner <hweidner@gmx.net>
 #
 # This program is released under the terms of the GNU General Public License,
 # version 3.
@@ -100,17 +100,25 @@ $IPT -t mangle -F
 $IPT -t mangle -X
 
 # allow answer packets
-$IPT -A INPUT -m state --state ESTABLISHED,RELATED -j ACCEPT
-$IPT -A OUTPUT -m state --state ESTABLISHED,RELATED -j ACCEPT
+$IPT -A INPUT   -m state --state ESTABLISHED,RELATED -j ACCEPT
+$IPT -A OUTPUT  -m state --state ESTABLISHED,RELATED -j ACCEPT
 $IPT -A FORWARD -m state --state ESTABLISHED,RELATED -j ACCEPT
 
 # allow local traffic
-$IPT -A INPUT -i lo -j ACCEPT
+$IPT -A INPUT  -i lo -j ACCEPT
 $IPT -A OUTPUT -o lo -j ACCEPT
 
 # kill packets with state NEW but no SYN
 $IPT -A INPUT -p tcp ! --syn -m state --state NEW -j LOG --log-prefix "New not syn: "
 $IPT -A INPUT -p tcp ! --syn -m state --state NEW -j DROP
+
+# log and kill packets with state INVALID
+$IPT -A INPUT   -m state --state INVALID -j LOG --log-prefix "Invalid Input: "
+$IPT -A INPUT   -m state --state INVALID -j DROP
+$IPT -A OUTPUT  -m state --state INVALID -j LOG --log-prefix "Invalid Output: "
+$IPT -A OUTPUT  -m state --state INVALID -j DROP
+$IPT -A FORWARD -m state --state INVALID -j LOG --log-prefix "Invalid Forward: "
+$IPT -A FORWARD -m state --state INVALID -j DROP
 
 EOF
 
@@ -361,13 +369,11 @@ $script =~ s/!(\S)/! $1/mg;
 $script .= <<"EOF";
 
 # Log everything else
-
-$IPT -A INPUT -j LOG --log-level info --log-prefix="Unknown Input: "
-$IPT -A OUTPUT -j LOG --log-level info --log-prefix="Unknown Output: "
+$IPT -A INPUT   -j LOG --log-level info --log-prefix="Unknown Input: "
+$IPT -A OUTPUT  -j LOG --log-level info --log-prefix="Unknown Output: "
 $IPT -A FORWARD -j LOG --log-level info --log-prefix="Unknown Forward: "
 
 # enable IP forward
-
 echo "1" >/proc/sys/net/ipv4/ip_forward
 
 EOF
