@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 
 #
-# FWconf  version 1.0.4
+# FWconf  version 1.0.4+devel
 #
 # a firewall configuration language for Netfilter/Iptables
 #
@@ -111,14 +111,6 @@ $IPT -A OUTPUT -o lo -j ACCEPT
 # kill packets with state NEW but no SYN
 $IPT -A INPUT -p tcp ! --syn -m state --state NEW -j LOG --log-prefix "New not syn: "
 $IPT -A INPUT -p tcp ! --syn -m state --state NEW -j DROP
-
-# log and kill packets with state INVALID
-$IPT -A INPUT   -m state --state INVALID -j LOG --log-prefix "Invalid Input: "
-$IPT -A INPUT   -m state --state INVALID -j DROP
-$IPT -A OUTPUT  -m state --state INVALID -j LOG --log-prefix "Invalid Output: "
-$IPT -A OUTPUT  -m state --state INVALID -j DROP
-$IPT -A FORWARD -m state --state INVALID -j LOG --log-prefix "Invalid Forward: "
-$IPT -A FORWARD -m state --state INVALID -j DROP
 
 EOF
 
@@ -367,6 +359,14 @@ for $file (@ARGV) {
 $script =~ s/!(\S)/! $1/mg;
 
 $script .= <<"EOF";
+
+# log and kill packets with state INVALID
+$IPT -A INPUT   -m state --state INVALID -j LOG --log-prefix "Invalid Input: "
+$IPT -A INPUT   -m state --state INVALID -j DROP
+$IPT -A OUTPUT  -m state --state INVALID -j LOG --log-prefix "Invalid Output: "
+$IPT -A OUTPUT  -m state --state INVALID -j DROP
+$IPT -A FORWARD -m state --state INVALID -j LOG --log-prefix "Invalid Forward: "
+$IPT -A FORWARD -m state --state INVALID -j DROP
 
 # Log everything else
 $IPT -A INPUT   -j LOG --log-level info --log-prefix="Unknown Input: "
